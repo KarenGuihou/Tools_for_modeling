@@ -1,0 +1,315 @@
+cancel data/all
+
+use stations_argo_GLAZUR64_ALL.nc
+!use stations_argo_GLAZUR-T20ref_vertical-profiles-6900505.nc
+LET status = nco_attr("stations_argo_GLAZUR_ALL.nc", "TEMP_MOD", "units", "c", "o", "celsius")
+LOAD status
+LET status = nco_attr("stations_argo_GLAZUR_ALL.nc", "TEMP_OBS", "units", "c", "o", "celsius")
+LOAD status
+
+use stations_argo_MED12_ALL.nc
+!use stations_argo_MED12_vertical-profiles-6900505.nc
+LET status = nco_attr("stations_argo_MED12_ALL.nc", "TEMP_MOD", "units", "c", "o", "celsius")
+LOAD status
+LET status = nco_attr("stations_argo_MED12_ALL.nc", "TEMP_OBS", "units", "c", "o", "celsius")
+LOAD status
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!
+!!! GLAZUR !!!
+!!!!!!!!!!!!!!
+!create a mask for non-ambiguous paired obs/mod to be apply to model data at least...
+let mask_gl = salt_obs[d=1]/salt_obs[d=1]*salt_mod[d=1]/salt_mod[d=1]
+stat mask_gl
+
+! Simple DIFF
+let DIFF_SALT_gl = (salt_obs[d=1] - salt_mod[d=1]*mask_gl)
+let DIFF_TEMP_gl = (temp_obs[d=1] - temp_mod[d=1]*mask_gl)
+
+!RMS
+let RMS_SALT_gl = (salt_obs[d=1] - salt_mod[d=1]*mask_gl)^2
+let RMS_TEMP_gl = (temp_obs[d=1] - temp_mod[d=1]*mask_gl)^2
+
+!MRD
+let MRD_SALT_gl = (salt_obs[d=1] - salt_mod[d=1]*mask_gl)/salt_obs[d=1]
+let MRD_TEMP_gl = (temp_obs[d=1] - temp_mod[d=1]*mask_gl)/temp_obs[d=1]
+
+! Mratio
+let ratio_SALT_gl = salt_mod[d=1]*mask_gl[d=1]/salt_obs[d=1]
+let ratio_TEMP_gl = temp_mod[d=1]*mask_gl[d=1]/temp_obs[d=1]
+
+!get results
+let N_gl = mask_gl[L=@NGD,K=@SUM]
+list N_gl , RMS_SALT_gl[L=@NGD,K=@SUM]
+
+let  mean_DIFF_SALT_gl = DIFF_SALT_gl[L=@SUM,K=@SUM]/N_gl
+let  mean_DIFF_TEMP_gl = DIFF_temp_gl[L=@SUM,K=@SUM]/N_gl
+
+let  mean_RMS_SALT_gl = RMS_SALT_gl[L=@SUM,K=@SUM]/N_gl
+let  mean_RMS_TEMP_gl = RMS_temp_gl[L=@SUM,K=@SUM]/N_gl
+
+let  mean_MRD_SALT_gl = MRD_SALT_gl[L=@SUM,K=@SUM]/N_gl
+let  mean_MRD_TEMP_gl = MRD_TEMP_gl[L=@SUM,K=@SUM]/N_gl
+list mean_MRD_SALT_gl
+
+let  mean_ratio_SALT_gl = ratio_SALT_gl[L=@SUM,K=@SUM]/N_gl
+let  mean_ratio_TEMP_gl = ratio_TEMP_gl[L=@SUM,K=@SUM]/N_gl
+
+!! now, linear regression...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!first compute means of true paired values using mask...
+let salt_obs_mask_gl= salt_obs[d=1]*mask_gl
+let mean_salt_obs_gl = salt_obs_mask_gl[L=@SUM,K=@SUM]/N_gl
+let salt_mod_mask_gl= salt_mod[d=1]*mask_gl
+let mean_salt_mod_gl = salt_mod_mask_gl[L=@SUM,K=@SUM]/N_gl
+
+let temp_obs_mask_gl= temp_obs[d=1]*mask_gl
+let mean_temp_obs_gl = temp_obs_mask_gl[L=@SUM,K=@SUM]/N_gl
+let temp_mod_mask_gl= temp_mod[d=1]*mask_gl
+let mean_temp_mod_gl = temp_mod_mask_gl[L=@SUM,K=@SUM]/N_gl
+
+!hence deviations to means...
+let dev_salt_obs_gl = salt_obs_mask_gl - mean_salt_obs_gl
+let dev_salt_mod_gl = salt_mod_mask_gl - mean_salt_mod_gl
+let dev_temp_obs_gl = temp_obs_mask_gl - mean_temp_obs_gl
+let dev_temp_mod_gl = temp_mod_mask_gl - mean_temp_mod_gl
+
+!discrete cov...
+let dcov_salt_gl = dev_salt_obs_gl * dev_salt_mod_gl
+let dcov_temp_gl = dev_temp_obs_gl * dev_temp_mod_gl
+
+!hence discrete squared deviations
+let dsqd_salt_obs_gl = dev_salt_obs_gl^2
+let dsqd_salt_mod_gl = dev_salt_mod_gl^2
+let dsqd_temp_obs_gl = dev_temp_obs_gl^2
+let dsqd_temp_mod_gl = dev_temp_mod_gl^2
+
+!sum of those over N-1 to obtain covariances and variances...
+let cov_salt_gl = dcov_salt_gl[L=@SUM,K=@SUM]/(N_gl-1)
+let cov_temp_gl = dcov_temp_gl[L=@SUM,K=@SUM]/(N_gl-1)
+let var_salt_obs_gl = dsqd_salt_obs_gl[L=@SUM,K=@SUM]/(N_gl-1)
+let var_salt_mod_gl = dsqd_salt_mod_gl[L=@SUM,K=@SUM]/(N_gl-1)
+let var_temp_obs_gl = dsqd_temp_obs_gl[L=@SUM,K=@SUM]/(N_gl-1)
+let var_temp_mod_gl = dsqd_temp_mod_gl[L=@SUM,K=@SUM]/(N_gl-1)
+
+!now computes r, a and b...
+let r_salt_gl = cov_salt_gl/(var_salt_obs_gl^0.5*var_salt_mod_gl^0.5)
+!list r_salt_gl^2
+let a_salt_gl = r_salt_gl*var_salt_obs_gl^0.5/var_salt_mod_gl^0.5
+!list a_salt_gl
+let b_salt_gl = mean_salt_obs_gl - a_salt_gl * mean_salt_mod_gl
+!list b_salt_gl
+let lin_salt_gl = a_salt_gl*salt_mod[d=1] + b_salt_gl
+
+let r_temp_gl = cov_temp_gl/(var_temp_obs_gl^0.5*var_temp_mod_gl^0.5)
+!list r_temp_gl^2
+let a_temp_gl = r_temp_gl*var_temp_obs_gl^0.5/var_temp_mod_gl^0.5
+!list a_temp_gl
+let b_temp_gl = mean_temp_obs_gl - a_temp_gl * mean_temp_mod_gl
+!list b_temp_gl
+let lin_temp_gl = a_temp_gl*temp_mod[d=1] + b_temp_gl
+
+let line_eq_gl = {0,40} ! x[L=0:40:1]
+
+! Calculate the density
+let dens_obs_gl=rho_un(salt_obs[d=1],temp_obs[d=1],0)-1000
+let dens_mod_gl=rho_un(salt_mod[d=1],temp_mod[d=1],0)-1000
+let RMS_dens_gl = (dens_obs_gl - dens_mod_gl*mask_gl)^2
+let MRD_dens_gl = (dens_obs_gl - dens_mod_gl*mask_gl)/dens_obs_gl
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!
+!!! MED12  !!!
+!!!!!!!!!!!!!!
+!create a mask for non-ambiguous paired obs/mod to be apply to model data at least...
+let mask_med = salt_obs[d=2]/salt_obs[d=2]*salt_mod[d=2]/salt_mod[d=2]
+stat mask_med
+
+! Simple DIFF
+let DIFF_SALT_med = (salt_obs[d=2] - salt_mod[d=2]*mask_med)
+let DIFF_TEMP_med = (temp_obs[d=2] - temp_mod[d=2]*mask_med)
+
+!RMS
+let RMS_SALT_med = (salt_obs[d=2] - salt_mod[d=2]*mask_med)^2
+let RMS_TEMP_med = (temp_obs[d=2] - temp_mod[d=2]*mask_med)^2
+
+!MRD
+let MRD_SALT_med = (salt_obs[d=2] - salt_mod[d=2]*mask_med)/salt_obs[d=2]
+let MRD_TEMP_med = (temp_obs[d=2] - temp_mod[d=2]*mask_med)/temp_obs[d=2]
+
+! Mratio
+let ratio_SALT_med = salt_mod[d=2]*mask_med[d=2]/salt_obs[d=2]
+let ratio_TEMP_med = temp_mod[d=2]*mask_med[d=2]/temp_obs[d=2]
+
+!get results
+let N_med = mask_med[L=@NGD,K=@SUM]
+list N_med , RMS_SALT_med[L=@NGD,K=@SUM]
+
+let  mean_DIFF_SALT_med = DIFF_SALT_med[L=@SUM,K=@SUM]/N_med
+let  mean_DIFF_TEMP_med = DIFF_temp_med[L=@SUM,K=@SUM]/N_med
+
+let  mean_RMS_SALT_med = RMS_SALT_med[L=@SUM,K=@SUM]/N_med
+let  mean_RMS_TEMP_med = RMS_temp_med[L=@SUM,K=@SUM]/N_med
+
+let  mean_MRD_SALT_med = MRD_SALT_med[L=@SUM,K=@SUM]/N_med
+let  mean_MRD_TEMP_med = MRD_TEMP_med[L=@SUM,K=@SUM]/N_med
+list mean_MRD_SALT_med
+
+let  mean_ratio_SALT_med = ratio_SALT_med[L=@SUM,K=@SUM]/N_med
+let  mean_ratio_TEMP_med = ratio_TEMP_med[L=@SUM,K=@SUM]/N_med
+
+!! now, linear regression...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!first compute means of true paired values using mask...
+let salt_obs_mask_med= salt_obs[d=2]*mask_med
+let mean_salt_obs_med = salt_obs_mask_med[L=@SUM,K=@SUM]/N_med
+let salt_mod_mask_med= salt_mod[d=2]*mask_med
+let mean_salt_mod_med = salt_mod_mask_med[L=@SUM,K=@SUM]/N_med
+
+let temp_obs_mask_med= temp_obs[d=2]*mask_med
+let mean_temp_obs_med = temp_obs_mask_med[L=@SUM,K=@SUM]/N_med
+let temp_mod_mask_med= temp_mod[d=2]*mask_med
+let mean_temp_mod_med = temp_mod_mask_med[L=@SUM,K=@SUM]/N_med
+
+!hence deviations to means...
+let dev_salt_obs_med = salt_obs_mask_med - mean_salt_obs_med
+let dev_salt_mod_med = salt_mod_mask_med - mean_salt_mod_med
+let dev_temp_obs_med = temp_obs_mask_med - mean_temp_obs_med
+let dev_temp_mod_med = temp_mod_mask_med - mean_temp_mod_med
+
+!discrete cov...
+let dcov_salt_med = dev_salt_obs_med * dev_salt_mod_med
+let dcov_temp_med = dev_temp_obs_med * dev_temp_mod_med
+
+!hence discrete squared deviations
+let dsqd_salt_obs_med = dev_salt_obs_med^2
+let dsqd_salt_mod_med = dev_salt_mod_med^2
+let dsqd_temp_obs_med = dev_temp_obs_med^2
+let dsqd_temp_mod_med = dev_temp_mod_med^2
+
+!sum of those over N-1 to obtain covariances and variances...
+let cov_salt_med = dcov_salt_med[L=@SUM,K=@SUM]/(N_med-1)
+let cov_temp_med = dcov_temp_med[L=@SUM,K=@SUM]/(N_med-1)
+let var_salt_obs_med = dsqd_salt_obs_med[L=@SUM,K=@SUM]/(N_med-1)
+let var_salt_mod_med = dsqd_salt_mod_med[L=@SUM,K=@SUM]/(N_med-1)
+let var_temp_obs_med = dsqd_temp_obs_med[L=@SUM,K=@SUM]/(N_med-1)
+let var_temp_mod_med = dsqd_temp_mod_med[L=@SUM,K=@SUM]/(N_med-1)
+
+!now computes r, a and b...
+let r_salt_med = cov_salt_med/(var_salt_obs_med^0.5*var_salt_mod_med^0.5)
+!list r_salt_med^2
+let a_salt_med = r_salt_med*var_salt_obs_med^0.5/var_salt_mod_med^0.5
+!list a_salt_med
+let b_salt_med = mean_salt_obs_med - a_salt_med * mean_salt_mod_med
+!list b_salt_med
+let lin_salt_med = a_salt_med*salt_mod[d=2] + b_salt_med
+
+let r_temp_med = cov_temp_med/(var_temp_obs_med^0.5*var_temp_mod_med^0.5)
+!list r_temp_med^2
+let a_temp_med = r_temp_med*var_temp_obs_med^0.5/var_temp_mod_med^0.5
+!list a_temp_med
+let b_temp_med = mean_temp_obs_med - a_temp_med * mean_temp_mod_med
+!list b_temp_med
+let lin_temp_med = a_temp_med*temp_mod[d=2] + b_temp_med
+
+let line_eq_med = {0,40} ! x[L=0:40:1]
+
+! Calculate the density
+let dens_obs_med=rho_un(salt_obs[d=2],temp_obs[d=2],0)-1000
+let dens_mod_med=rho_un(salt_mod[d=2],temp_mod[d=2],0)-1000
+let RMS_dens_med = (dens_obs_med - dens_mod_med*mask_med)^2
+let MRD_dens_med = (dens_obs_med - dens_mod_med*mask_med)/dens_obs_med
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! WINDOWS
+!!!!!!!!!!
+set w 1
+set win/aspect=0.5
+define viewport/axes/x=0.04:0.445/y=0.2:0.9 V_RMSE
+define viewport/axes/x=0.555:0.96/y=0.2:0.9 V_MRD
+
+
+!!!!!!!!!!!!!!
+!! SALINITE !!
+!!!!!!!!!!!!!!
+!! PROFILS MOYENS rms
+set viewport V_RMSE
+plot/vlog/vlimits=0.5:1000/hlog/nolabel/hlimits=0.0001:0.07/color=red RMS_salt_gl[l=@ave]
+ppl title 0.15 "RMS modeles/observations"
+ppl axlabp -1 1
+ppl plot
+plot/ov/nolabel/hlog/vlimits=0:1000/color=blue RMS_salt_med[l=@ave]
+
+!! PROFILS MOYENS MRD
+set viewport V_MRD
+plot/vlimits=1:1000/vlog/nolabel/hlimits=-0.0035:0.0035/color=red MRD_salt_gl[l=@ave]
+ppl cross 1
+ppl title 0.15 "MRD modeles/observations"
+ppl axlabp -1 -1
+ppl axlint 3
+ppl ylab "Profondeur (m)"
+ppl plot
+plot/nolabel/ov/color=blue MRD_salt_med[l=@ave]
+label 0.0035,-0.2,1,0,0.2, SALINITE 
+
+frame/file=stat_salt.gif
+
+!!!!!!!!!!!!!!!!!
+!! TEMPERATURE !!
+!!!!!!!!!!!!!!!!!
+!! PROFILS MOYENS rms
+set viewport V_RMSE
+plot/vlog/vlimits=0.5:1000/hlog/nolabel/hlimits=0.01:10/color=red RMS_temp_gl[l=@ave]
+ppl title 0.15 "RMS modeles/observations"
+ppl axlabp -1 1
+ppl plot
+plot/ov/nolabel/hlog/vlimits=0:1000/color=blue RMS_temp_med[l=@ave]
+
+!! PROFILS MOYENS MRD
+set viewport V_MRD
+plot/vlimits=1:1000/vlog/nolabel/hlimits=-0.06:0.03/color=red MRD_temp_gl[l=@ave]
+ppl cross 1
+ppl title 0.15 "MRD modeles/observations"
+ppl axlabp -1 -1
+ppl ylab "Profondeur (m)"
+ppl plot
+plot/nolabel/ov/color=blue MRD_temp_med[l=@ave]
+label 0.03,-0.2,1,0,0.2, TEMPERATURE
+frame/file=stat_temp.gif
+
+
+
+!!!!!!!!!!!!!
+!! DENSITE !!
+!!!!!!!!!!!!!
+!! PROFILS MOYENS rms
+set viewport V_RMSE
+plot/vlog/vlimits=0.5:1000/hlog/nolabel/hlimits=0.0001:0.07/color=red RMS_dens_gl[l=@ave]
+ppl title 0.15 "RMS modeles/observations"
+ppl axlabp -1 1
+ppl plot
+plot/ov/nolabel/hlog/vlimits=0:1000/color=blue RMS_dens_med[l=@ave]
+
+!! PROFILS MOYENS MRD
+set viewport V_MRD
+plot/vlimits=1:1000/vlog/nolabel/hlimits=-0.01:0.007/color=red MRD_dens_gl[l=@ave]
+ppl cross 1
+ppl axlint 2
+ppl title 0.15 "MRD modeles/observations"
+ppl axlabp -1 -1
+ppl ylab "Profondeur (m)"
+ppl plot
+plot/nolabel/ov/color=blue MRD_dens_med[l=@ave]
+label 0.007,-0.2,1,0,0.2, ANOMALIE DE DENSITE 
+
+frame/file=stat_dens.gif
+
+
+sp convert stat_salt.gif ~/Dropbox/THESE/Redaction/Figures/T20ref/stat_argo_salt.png
+sp convert stat_temp.gif ~/Dropbox/THESE/Redaction/Figures/T20ref/stat_argo_temp.png
+sp convert stat_dens.gif ~/Dropbox/THESE/Redaction/Figures/T20ref/stat_argo_dens.png

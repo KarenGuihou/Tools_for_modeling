@@ -1,0 +1,217 @@
+cancel data/all
+
+use MED12_grid_U_REF.des
+use MED12_grid_V_REF.des
+DEFINE VARIABLE mod_med=(vozocrtx[d=1]^2+vomecrty[d=2]^2)^0.5
+set var/bad=0 vozocrtx[d=1]
+set var/bad=0 vomecrty[d=2]
+use GLAZUR_U_REF.des
+use GLAZUR_V_REF.des
+DEFINE VARIABLE mod_gl=(vozocrtx[d=3]^2+vomecrty[d=4]^2)^0.5
+
+use "/media/DATA_THESE/IN-SITU/Coriolis_20072008/ADCP/MAT2NC/ADCP_day_$1.nc"
+use "/media/DATA_THESE/IN-SITU/Coriolis_20072008/ADCP/MAT2NC/MASK_GL_MED.nc"
+! Extract model temperature, salinity and density at I,J argo positions for all time of the year
+let Umed=samplexy_curv_nrst(vozocrtx[d=1,l=$1],nav_lon[d=1],nav_lat[d=1],LONobs[d=5],LATobs[d=5])
+let Vmed=samplexy_curv_nrst(vomecrty[d=2,l=$1],nav_lon[d=2],nav_lat[d=2],LONobs[d=5],LATobs[d=5])
+let Ugl=samplexy_curv_nrst(vozocrtx[d=3,l=$1],nav_lon[d=3],nav_lat[d=3],LONobs[d=5],LATobs[d=5])
+let Vgl=samplexy_curv_nrst(vomecrty[d=4,l=$1],nav_lon[d=4],nav_lat[d=4],LONobs[d=5],LATobs[d=5])
+!let ii=`LATobs[d=5],RETURN=JSIZE`
+!let Ugl=Ugl1[x=1:`ii`]
+!let Vgl=Vgl1[x=1:`ii`,g=gridlatg@asn]
+!let Umed=Umed1[x=1:`ii`,g=gridlatm@asn]
+!let Vmed=Vmed1[x=1:`ii`,g=gridlatm@asn]
+DEFINE VARIABLE Mmed=(Umed^2+Vmed^2)^0.5
+DEFINE VARIABLE Mgl=(Ugl^2+Vgl^2)^0.5
+
+set win 1
+set window/aspect=1.414
+
+
+set win/aspect=`3/2`
+DEFINE VIEWPORT/XLIM=0.2,0.8/YLIM= 0.7,0.95/axes V1
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.45,0.55/axes V2
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.25,0.35/axes V3
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.05,0.15/axes V4
+
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.45,0.55/axes V5
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.25,0.35/axes V6
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.05,0.15/axes V7
+
+set viewport v1
+shade/hlimits=$2:$3/vlimits=$4:$5/nolabel/k=1/l=$1/lev="(0,0.5,0.02)(inf)"/pal=rainbow/key=continuous/set_up mod_gl,nav_lon[d=4],nav_lat[d=4]
+!ppl axlabp -1 0
+ppl yLAB "Latitude"
+ppl axlsze 0.15 0.15
+ppl xLAB "Longitude"
+ppl axlint  3 3
+ppl shakey 1,1,0.15,2,,,
+ppl shade
+vector/hlimits=$2:$3/vlimits=$4:$5/set_up/ov/k=1/l=$1/color=black/set_up/nolabels/length=0.5 VOZOCRTX[d=3],VOMECRTY[d=4],nav_lon[d=4],nav_lat[d=4]
+ppl veckey 3.5 42.95 0.5
+ppl vector/ov 4 4
+go coastline 1 overlay
+sp cp /media/DATA_THESE/IN-SITU/Coriolis_20072008/ADCP/MAT2NC/ADCP_day_$1.dat .
+go scattered_vectors  ADCP_day_$1.dat 0.5 clock
+PLOT/VS/LINE/nolabels/color=red/D=ADCP_day_$1.dat/@aros/OVERLAY arrow_x,arrow_y
+PLOT/VS/ov/LINE/color=red/thick=3/nolabels xp[d=7],yp[d=7] 
+sp rm  ADCP_day_$1.dat
+label 6,43.5,0,0,0.15 "GLazur64"
+label 6,43.7,0,0,0.15 "Surface velocity (m/s)"
+define symbol tlab="`time[d=5],return=tend`"
+label 5,44.1,0,,0.2,($tlab)
+
+set viewport v2
+shade/d=5/nolabels/vlimits=-180:0/lev="(-inf)(-0.5,0.5,0.1)(inf)"/pal=light_centered/key=continuous/set_up Uobs[d=5],LONobs,Zobs
+!ppl axlabp 0 -1
+ppl axlsze 0.15 0.15
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl axlint 5 3
+ppl shade
+LABEL/NOUSER `($ppl$xlen)/2`,`($ppl$ylen)/0.68`,0,0,.3,ADCP
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,ZONAL<NL>VELOCITY
+
+
+set viewport v3
+shade/d=5/nolabels/vlimits=-180:0/lev="(-inf)(-0.5,0.5,0.05)(inf)"/pal=light_centered/key=continuous/set_up Vobs[d=5],LONobs,Zobs
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl shade
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,MERID.<NL>VELOCITY
+
+set viewport v4
+shade/d=5/nolabels/vlimits=-180:0/lev="(0,0.6,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mobs[d=5],LONobs,Zobs
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl shade
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,TOTAL<NL>VELOCITY
+
+
+
+set viewport v5
+shade/k=1:51/nolabels/vlimits=0:180/lev="(-inf)(-0.5,0.5,0.1)(inf)"/pal=light_centered/key=continuous/set_up Ugl,LONobs[d=5],Zgl[d=6]
+!ppl axlabp 0 -1
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 -1
+ppl shade
+LABEL/NOUSER `($ppl$xlen)/2`,`($ppl$ylen)/0.68`,0,0,.3,GLAZUR64 T20
+
+set viewport v6
+shade/k=1:51/nolabels/vlimits=0:180/lev="(-inf)(-0.5,0.5,0.05)(inf)"/pal=light_centered/key=continuous/set_up Vgl,LONobs[d=5],Zgl[d=6]
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl shade
+
+set viewport v7
+shade/k=1:51/nolabels/vlimits=0:180/lev="(0,0.6,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mgl,LONobs[d=5],Zgl[d=6]
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl shade
+
+cancel mode metafile
+frame/file="Figures/ADCP/ADCP_T20_$1_custom.gif"
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MED12 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+set win 2
+set window/aspect=1.414
+
+
+set win/aspect=`3/2`
+DEFINE VIEWPORT/XLIM=0.2,0.8/YLIM= 0.7,0.95/axes V1
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.45,0.55/axes V2
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.25,0.35/axes V3
+DEFINE VIEWPORT/XLIM=0.16,0.51/YLIM= 0.05,0.15/axes V4
+
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.45,0.55/axes V5
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.25,0.35/axes V6
+DEFINE VIEWPORT/XLIM=0.60,0.95/YLIM= 0.05,0.15/axes V7
+set viewport v1
+shade/nolabel/k=1/hlimits=$2:$3/vlimits=$4:$5/l=$1/lev="(0,0.5,0.02)(inf)"/pal=rainbow/key=continuous/set_up mod_med,nav_lon[d=2],nav_lat[d=2]
+!ppl axlabp -1 0
+ppl yLAB "Latitude"
+ppl axlsze 0.15 0.15
+ppl xLAB "Longitude"
+ppl axlint  3 3
+ppl shakey 1,1,0.15,2,,,
+ppl shade
+vector/set_up/ov/hlimits=$2:$3/vlimits=$4:$5/k=1/l=$1/color=black/set_up/nolabels/length=0.5 VOZOCRTX[d=1],VOMECRTY[d=2],nav_lon[d=2],nav_lat[d=2]
+ppl veckey 3.5 42.95 0.5
+ppl vector/ov 1 1
+go coastline 1 overlay
+sp cp /media/DATA_THESE/IN-SITU/Coriolis_20072008/ADCP/MAT2NC/ADCP_day_$1.dat .
+go scattered_vectors  ADCP_day_$1.dat 0.5 clock
+PLOT/VS/LINE/nolabels/color=red/D=ADCP_day_$1.dat/@aros/OVERLAY arrow_x,arrow_y
+PLOT/VS/ov/LINE/color=red/thick=3/nolabels xp[d=7],yp[d=7] 
+sp rm  ADCP_day_$1.dat
+label 6,43.5,0,0,0.15 "MED12"
+label 6,43.7,0,0,0.15 "Surface velocity (m/s)"
+define symbol tlab="`time[d=5],return=tend`"
+label 5,44.1,0,,0.2,($tlab)
+
+set viewport v2
+shade/d=5/nolabels/vlimits=-180:0/lev="(-inf)(-0.5,0.5,0.1)(inf)"/pal=light_centered/key=continuous/set_up Uobs[d=5],LONobs,Zobs
+!ppl axlabp 0 -1
+ppl axlsze 0.15 0.15
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl axlint 5 3
+ppl shade
+LABEL/NOUSER `($ppl$xlen)/2`,`($ppl$ylen)/0.68`,0,0,.3,ADCP
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,ZONAL<NL>VELOCITY
+
+
+set viewport v3
+shade/d=5/nolabels/vlimits=-180:0/lev="(-inf)(-0.5,0.5,0.05)(inf)"/pal=light_centered/key=continuous/set_up Vobs[d=5],LONobs,Zobs
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl shade
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,MERID.<NL>VELOCITY
+
+set viewport v4
+shade/d=5/nolabels/vlimits=-180:0/lev="(0,0.6,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mobs[d=5],LONobs,Zobs
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl shade
+LABEL/NOUSER `($ppl$xlen)-5.8`,`($ppl$ylen)/2`,0,0,.2,TOTAL<NL>VELOCITY
+
+set viewport v5
+shade/k=1:28/nolabels/vlimits=0:180/lev="(-inf)(-0.5,0.5,0.1)(inf)"/pal=light_centered/key=continuous/set_up Umed,LONobs[d=5],Zmed[d=6]
+!ppl axlabp 0 -1
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 -1
+ppl shade
+LABEL/NOUSER `($ppl$xlen)/2`,`($ppl$ylen)/0.68`,0,0,.3,MED12
+
+set viewport v6
+shade/k=1:28/nolabels/vlimits=0:180/lev="(-inf)(-0.5,0.5,0.05)(inf)"/pal=light_centered/key=continuous/set_up Vmed,LONobs[d=5],Zmed[d=6]
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl shade
+
+set viewport v7
+shade/k=1:28/nolabels/vlimits=0:180/lev="(0,0.6,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mmed,LONobs[d=5],Zmed[d=6]
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl shade
+
+cancel mode metafile
+frame/file="Figures/ADCP/ADCP_MED12_$1_custom.gif"
+ppl shaset reset
+

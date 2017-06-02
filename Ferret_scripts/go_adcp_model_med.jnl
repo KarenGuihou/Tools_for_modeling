@@ -1,0 +1,41 @@
+cancel data/all
+
+use MED12_grid_U_REF.des
+use MED12_grid_V_REF.des
+DEFINE VARIABLE mod_med=(vozocrtx[d=1]^2+vomecrty[d=2]^2)^0.5
+set var/bad=0 vozocrtx[d=1]
+set var/bad=0 vomecrty[d=2]
+use GLAZUR_U_REF.des
+use GLAZUR_V_REF.des
+DEFINE VARIABLE mod_20=(vozocrtx[d=3]^2+vomecrty[d=4]^2)^0.5
+
+use "/media/Elements/IN-SITU/ADCP/MAT2NC/ADCP_day_$1.nc"
+use "/media/Elements/IN-SITU/ADCP/MAT2NC/MASK_GL_MED.nc"
+! Extract model temperature, salinity and density at I,J argo positions for all time of the year
+let Umed=samplexy_curv_nrst(vozocrtx[d=1,l=$1],nav_lon[d=1],nav_lat[d=1],LONobs[d=5],LATobs[d=5])
+let Vmed=samplexy_curv_nrst(vomecrty[d=2,l=$1],nav_lon[d=2],nav_lat[d=2],LONobs[d=5],LATobs[d=5])
+let U20=samplexy_curv_nrst(vozocrtx[d=3,l=$1],nav_lon[d=3],nav_lat[d=3],LONobs[d=5],LATobs[d=5])
+let V20=samplexy_curv_nrst(vomecrty[d=4,l=$1],nav_lon[d=4],nav_lat[d=4],LONobs[d=5],LATobs[d=5])
+DEFINE VARIABLE Mmed=(Umed^2+Vmed^2)^0.5
+DEFINE VARIABLE M20=(U20^2+V20^2)^0.5
+
+sp cp /media/Elements/IN-SITU/ADCP/MAT2NC/ADCP_day_$1.nc /media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" U20
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" V20
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" M20
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" VOZOCRTX[d=3,l=`$1`]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" VOMECRTY[d=4,l=`$1`]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" nav_lon[d=4]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc" nav_lat[d=4]
+
+
+sp cp /media/Elements/IN-SITU/ADCP/MAT2NC/ADCP_day_$1.nc /media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" Umed
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" Vmed
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" Mmed
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" VOZOCRTX[d=1,l=`$1`]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" VOMECRTY[d=2,l=`$1`]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" nav_lon[d=1]
+SAVE/append/file="/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc" nav_lat[d=1]
+
+

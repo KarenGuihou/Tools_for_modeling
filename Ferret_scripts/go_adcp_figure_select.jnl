@@ -1,0 +1,132 @@
+cancel data/all
+
+use MED12_grid_U_REF.des
+use MED12_grid_V_REF.des
+DEFINE VARIABLE mod_med=(vozocrtx[d=1]^2+vomecrty[d=2]^2)^0.5
+set var/bad=0 vozocrtx[d=1]
+set var/bad=0 vomecrty[d=2]
+use GLAZUR_U_REF.des
+use GLAZUR_V_REF.des
+DEFINE VARIABLE mod_gl=(vozocrtx[d=3]^2+vomecrty[d=4]^2)^0.5
+
+use "/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_T20.nc"
+use "/media/Elements/IN-SITU/ADCP/ADCP_dates_choisies/ADCP_day_$1_MED.nc"
+use "/media/Elements/IN-SITU/ADCP/MAT2NC/MASK_GL_MED.nc"
+! Extract model temperature, salinity and density at I,J argo positions for all time of the year
+let mask_fill=missing(Uobs[d=5]/Uobs[d=5],100)
+let Uobs_regrid=fill_xy(Uobs[d=5],mask_fill,1)
+let Vobs_regrid=fill_xy(Vobs[d=5],mask_fill,1)
+let Mobs_regrid=fill_xy(Mobs[d=5],mask_fill,1)
+
+set win 1
+set window/aspect=1.1
+DEFINE VIEWPORT/XLIM=0.11,0.48/YLIM=0.65,0.95/axes VsurfGL
+DEFINE VIEWPORT/XLIM=0.52,0.89/YLIM=0.65,0.95/axes VsurfMED
+
+DEFINE VIEWPORT/XLIM=0.12,0.37/YLIM= 0.35,0.47/axes Vmodgl
+DEFINE VIEWPORT/XLIM=0.39,0.64/YLIM= 0.35,0.47/axes Vmodadcp
+DEFINE VIEWPORT/XLIM=0.66,0.91/YLIM= 0.35,0.47/axes Vmodmed
+
+DEFINE VIEWPORT/XLIM=0.15,0.48/YLIM= 0.05,0.22/axes VU
+DEFINE VIEWPORT/XLIM=0.52,0.85/YLIM= 0.05,0.22/axes VV
+
+!!!!!!!  SURFACE !!!!!!!!!!!!!!
+set viewport VsurfGL
+shade/hlimits=$2:$3/vlimits=$4:$5/nolabel/z=16/l=$1/lev="(0,0.4,0.02)(inf)"/pal=rainbow/key=continuous/set_up mod_gl,nav_lon[d=4],nav_lat[d=4]
+ppl labset 0.15 0.15 0.15 0.15
+ppl axlabp -1 -1
+ppl axlsze 0.15 0.15
+ppl axlint  4 3
+ppl shakey 0,1,0.15,2,,,
+ppl xlab "GLAZUR64 - T20"
+ppl shade
+vector/aspect/hlimits=$2:$3/vlimits=$4:$5/set_up/ov/z=16/l=$1/color=black/set_up/nolabels/length=0.5 VOZOCRTX[d=3],VOMECRTY[d=4],nav_lon[d=4],nav_lat[d=4]
+ppl veckey 5.7 43.25
+ppl vector/ov 4 4
+go coastline 1 overlay
+sp cp /media/Elements/IN-SITU/ADCP/MAT2NC/SELECT/ADCP_day_$1.dat .
+go scattered_vectors  ADCP_day_$1.dat 0.4 clock
+PLOT/VS/LINE/nolabels/color=red/D=ADCP_day_$1.dat/@aros/OVERLAY arrow_x,arrow_y
+PLOT/VS/ov/LINE/color=red/thick=3/nolabels xp[d=8],yp[d=8] 
+define symbol tlab="`time[d=5],return=tend`"
+!label/nouser `($ppl$xlen)/3`,`($ppl$ylen)/1.1`,0,,0.2,"GLAZUR64 - T20"
+label/nouser `($ppl$xlen)+0.5`,`($ppl$ylen)+0.3`,0,,0.2,($tlab)
+
+set viewport VsurfMED
+shade/nolabel/z=16/hlimits=$2:$3/vlimits=$4:$5/l=$1/lev="(0,0.4,0.02)(inf)"/pal=rainbow/key=continuous/set_up mod_med,nav_lon[d=2],nav_lat[d=2]
+ppl axlabp -1 0
+ppl axlsze 0.15 0.15
+ppl axlint  3 3
+ppl shakey 1,1,0.15,2,,,
+ppl xlab 0.2 "MED12"
+ppl shade
+vector/aspect/set_up/ov/hlimits=$2:$3/vlimits=$4:$5/z=16/l=$1/color=black/set_up/nolabels/length=0.5 VOZOCRTX[d=1],VOMECRTY[d=2],nav_lon[d=2],nav_lat[d=2]
+!ppl veckey 6.5 43.4
+ppl vector/ov 1 1
+go coastline 1 overlay
+go scattered_vectors  ADCP_day_$1.dat 0.4 clock
+PLOT/VS/LINE/nolabels/color=red/D=ADCP_day_$1.dat/@aros/OVERLAY arrow_x,arrow_y
+PLOT/VS/ov/LINE/color=red/thick=3/nolabels xp[d=8],yp[d=8] 
+label/nouser `($ppl$xlen)+0.4`,`($ppl$ylen)+0.1`,0,0,0.15 "(m/s)"
+define symbol tlab="`time[d=5],return=tend`"
+!label/nouser `($ppl$xlen)/3`,`($ppl$ylen)/1.1`,0,,0.2,"MED12"
+
+!!!!!!!  MODULE !!!!!!!!!!!!!!
+set viewport Vmodgl
+shade/i=$6:$7/k=1:51/nolabels/d=5/vlimits=0:180/lev="(0,0.4,0.05)(inf)"/pal=rainbow/key=continuous/set_up M20,LATobs,Zgl[d=7]
+ppl axlabp -1 -1
+ppl axlint 5 2
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl xlab "GLAZUR - T20"
+ppl shade
+label/nouser `-1.5`,`($ppl$ylen)/2`,0,,0.4,"A)"
+
+set viewport Vmodadcp
+shade/i=$6:$7/d=5/nolabels/vlimits=-180:0/lev="(0,0.4,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mobs_regrid,LATobs,Zobs
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl axlabp -1 0
+ppl xlab "ADCP"
+ppl shade
+
+set viewport Vmodmed
+shade/i=$6:$7/d=6/k=1:28/nolabels/vlimits=0:180/lev="(0,0.4,0.05)(inf)"/pal=rainbow/key=continuous/set_up Mmed,LATobs[d=5],Zmed[d=7]
+!ppl axlabp 0 0
+ppl yLAB "Depth (m)"
+ppl shakey 1,0,-0.15,4,,,,
+ppl xlab "MED12"
+ppl shade
+
+!!!!!!!  U et V  !!!!!!!!!!!!!!
+set viewport VU
+!define axis/x=`LATobs[d=5,i=1]`:`LATobs[d=5,i=$7]`/npoints=`$7` latax 
+!define grid/x=latax gridx
+plot/d=5/nolabels/set_up/vlimits=-0.5:0.3 UOBS_regrid[z=-100:0@ave,i=`$6`:`$7`]
+ppl yLAB "m/s"
+ppl axlabp 0 -1
+ppl cross 1
+ppl title "U"
+ppl plot
+plot/i=$6:$7/d=5/nolabels/ov/color=red U20[z=0:100@ave]
+plot/i=$6:$7/d=6/nolabels/ov/color=blue UMED[z=0:100@ave]
+!label 10,220,-1,0,0.15 "MED16 zonal velocity (m/s)"
+label/nouser `-1.7`,`($ppl$ylen)/2`,0,,0.4,"B)"
+label/nouser `($ppl$xlen)/2`,`-($ppl$ylen)/0.95`,0,,0.4,U
+
+
+set viewport VV
+plot/i=$6:$7/d=5/nolabels/set_up/vlimits=-0.5:0.3 VOBS_regrid[z=-100:0@ave]
+ppl yLAB "m/s"
+ppl axlabp 0 1
+ppl title "V"
+ppl plot
+plot/i=$6:$7/d=5/nolabels/ov/color=red V20[z=0:100@ave] 
+plot/i=$6:$7/d=6/nolabels/ov/color=blue VMED[z=0:100@ave]
+!label 10,220,-1,0,0.15 "MED16 zonal velocity (m/s)"
+label/nouser `($ppl$xlen)/2`,`-($ppl$ylen)/0.95`,0,,0.4,V
+
+
+frame/file="Figures/ADCP/SELECT/ADCP_day_`$1`_select_pts.gif"
+
