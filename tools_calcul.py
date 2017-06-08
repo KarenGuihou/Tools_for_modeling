@@ -15,7 +15,6 @@ def change_tzyx2tyxz(var):
     Input   v(t,z,y,x)
     Ouput   v(t,y,x,z)
     """
-    if filetype == 'nc':
     d0 = var.shape[0]
     d1 = var.shape[1]
     d2 = var.shape[2]
@@ -189,8 +188,8 @@ def projection_U_across(bearing,u_iso,v_iso):
         else:
             print('pb here at n = %2d, bearing = %4.2d' %(n,bearing_rad[n]))
     count = count90 + count180 + count270 + count360
-    if count != n:
-        print('WARNING: some count missing')
+    if (count-1) != n:
+        print('WARNING: some count missing. count = %4d and n= %4d' % (count,n))
     Uas = np.sum((Xas,Yas),axis=0)
     #ind = ntest
     #print('Azimuth ==> %4.3f' % (bearing_rad[ind]))
@@ -209,3 +208,23 @@ def do_kdtree(combined_x_y_arrays, points):
     mytree = scipy.spatial.cKDTree(combined_x_y_arrays)
     (dist, indexes) = mytree.query(points)
     return indexes
+
+def smooth_var(var,nlen,box):
+    """
+    Simple tool to smooth data, using a running window
+    --
+    Input   variable, lenght of the variable, size of the running window
+    Output  Smoothed variable
+    """
+    var_smoothed = var * 1 #np.zeros_like(var)
+    ind = box/2
+    for n in range(ind,nlen-ind):
+        if len(var.shape) == 1:
+            var_smoothed[n] =  np.mean(var[n-ind:n+ind+1])            #(var[n-1]+var[n]+var[n+1])/3
+        elif len(var.shape) == 2:
+            var_smoothed[:,n] = np.mean(var[:,n-ind:n+ind+1],axis=1)    #(var[:,n-1]+var[:,n]+var[:,n+1])/3
+        elif len(var.shape) == 3:
+            var_smoothed[:,:,n] = np.mean(var[:,:,n-ind:n+ind+1],axis=2)  #(var[:,:,n-1]+var[:,:,n]+var[:,:,n+1])/3
+        else:
+            print('WARNING Case not coded')
+    return(var_smoothed)

@@ -6,7 +6,7 @@ import os
 import sys
 from jdcal import gcal2jd, jd2gcal
 
-def load_grid(gridname):
+def load_grid(gridname,filetype):
     """
     Read the grid file from Combes & Matano
     --
@@ -14,15 +14,15 @@ def load_grid(gridname):
     Ouput   h,lat_rho,lon_rho,lat_u,lon_u,lat_v,lon_v
     """
     if filetype == 'nc':
-    f = netcdf.netcdf_file(gridname, 'r')
-    h = f.variables['h'].data
-    lat_rho = f.variables['lat_rho'].data
-    lon_rho = f.variables['lon_rho'].data
-    lat_u = f.variables['lat_u'].data
-    lon_u = f.variables['lon_u'].data
-    lat_v = f.variables['lat_v'].data
-    lon_v = f.variables['lon_v'].data
-    f.close()
+        f = netcdf.netcdf_file(gridname, 'r')
+        h = f.variables['h'].data
+        lat_rho = f.variables['lat_rho'].data
+        lon_rho = f.variables['lon_rho'].data
+        lat_u = f.variables['lat_u'].data
+        lon_u = f.variables['lon_u'].data
+        lat_v = f.variables['lat_v'].data
+        lon_v = f.variables['lon_v'].data
+        f.close()
     return(h,lat_rho,lon_rho,lat_u,lon_u,lat_v,lon_v)
 
 def zlevs_1d(h, zeta, theta_s, theta_b, hc, N, type, vtransform):

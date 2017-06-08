@@ -36,14 +36,14 @@ def initiate_ncfile(output,lon,lat,zlen,tlen):
     Output  file
     """
     if filetype == 'nc':
-    ylen=lat.shape[0]
-    xlen=lon.shape[1]
-    f = netcdf.netcdf_file(output, 'w')
-    #f.history = 'Combes and Matano 2014 - Monthly mean nc file'
-    f.createDimension('lon',xlen)
-    f.createDimension('lat',ylen)
-    f.createDimension('z',zlen)
-    f.createDimension('time',tlen)
+        ylen=lat.shape[0]
+        xlen=lon.shape[1]
+        f = netcdf.netcdf_file(output, 'w')
+        #f.history = 'Combes and Matano 2014 - Monthly mean nc file'
+        f.createDimension('lon',xlen)
+        f.createDimension('lat',ylen)
+        f.createDimension('z',zlen)
+        f.createDimension('time',tlen)
 
     return(f)
 
@@ -54,7 +54,6 @@ def writevar1D(ncfile,var,varname,dim,varunits):
     Input   filename, variable, name of the variable in the ncfile, dimension, unit
     Output  (none)
     """
-    if filetype == 'nc':
     varname = ncfile.createVariable(varname,'f',(dim,))
     varname[:]=var
     varname.units = varunits
@@ -99,9 +98,18 @@ def get_e3u(depth):
     Input   depth
     Output  cell thickness
     """
-    e3u = np.zeros_like(depth)
-    e3u[0,:,:] = depth[0,:,:]*-1
-    e3u[1:,:,:] = depth[:-1,:,:]-depth[1:,:,:]
+    print(depth.shape)
+    if len(depth.shape) == 3:
+        e3u = np.zeros(depth)
+        e3u[0,:,:] = depth[0,:,:]*-1
+        e3u[1:,:,:] = depth[:-1,:,:]-depth[1:,:,:]
+    elif len(depth.shape) == 2:
+        e3u = np.zeros((depth.shape[0],depth.shape[1]))
+        e3u[0,:] = depth[0,:]*-1
+        e3u[1:,:] = depth[:-1,:]-depth[1:,:]
+    else:
+        print('Case not taken into account. Please code it')
+
     return(e3u)
 
 def uv_on_Tpoint(u,v):  #,lon_u,lat_u,lon_v,lat_v,lon_rho,lat_rho):
