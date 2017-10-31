@@ -1,0 +1,97 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v6.96  
+ ! Linux 2.6.32-573.7.1.el6.x86_64 64-bit - 12/02/15
+ ! 18-May-17 20:10     
+
+cancel data/all
+use/order=ilj Transport_MSatl_cmm.nc
+use/order=ilj Transport_leMaire_cmm.nc
+use/order=lji "Shelf/Transport_shelfbreak.nc"
+define axis/t="01-JAN":"31-DEC"/npoints=12 tax
+define grid/t=tax gridtr
+
+set win/aspect=0.5
+define viewport/axes/x=0.08:0.95/y=0.17:0.98 Vtimeseries
+set viewport Vtimeseries
+set text/font=arial
+set text/color=black
+
+!!!! TRANSPORT !!!!
+plot/vlimits=-0.11:0.75/hlimits=0.9:12.1/thick=2/COLOR=red/set_up transport[j=@ave,d=1,i=@sum]
+PPLUS TXTYPE,YR,MON3           ! For example
+PPLUS TXLINT,0,1               ! Print no years but display every month label
+ppl xlab "Months"; ppl title "Transport onto the section A";  ppl plot
+plot/ov/thick=2/color=blue/nolabels transport[j=@ave,d=2,i=@sum]
+plot/ov/thick=2/color=(0,80,0)/nolabels/d=3 transport[j=@ave,i=679:761@sum]
+
+repeat/j=1:27 (plot/ov/symbol=27/nolabels/COLOR=red transport[d=1,i=@sum])
+set text/color=red
+annotate/size=0.1/normalized/xpos=0.02/ypos=0.89 "Magellan Strait"
+repeat/j=1:27 (plot/ov/symbol=19/nolabels/color=blue transport[d=2,i=@sum])
+set text/color=blue
+annotate/size=0.1/normalized/xpos=0.02/ypos=0.92 "Le Maire Strait"
+repeat/j=1:27 (plot/ov/symbol=27/nolabels/color=(0,80,0) transport[d=3,i=679:761@sum])
+set text/color=(0,80,0)
+annotate/size=0.1/normalized/xpos=0.02/ypos=0.95 "Shelf Break"
+
+set text/color=black
+
+!! add a 0 line
+let a=transport[j=1,i=1]*0
+plot/ov/color=black/dashed/nolabels a
+
+frame/file="Budget_transport_southernshelf_CMM.png"
+pause
+
+
+!!! Yearly var
+cancel data/all
+use/order=ilj Transport_MSatl_cmm_vector.nc
+use/order=ilj Transport_leMaire_cmm_vector.nc
+use/order=ijl "Shelf/ncfiles/CMM_200.nc"
+use/order=ilj Transport_S1_cmm_vector.nc
+define axis/t="01-JAN-1980":"31-DEC-2006"/npoints=324 tax
+define grid/t=tax gridtr
+
+let tr_shelf = transport[i=679:761@sum,d=3]
+let tr_in = transport[d=1,i=@sum]+transport[d=2,i=@sum]+tr_shelf
+
+plot/vlimits=-0.15:1.3/dashed/set_up/color=(0,80,0) tr_shelf[gt=tax@asn]
+ppl title "Transport in the different sections of region A"
+ppl ylab "Sv (10^6 m3/s)"
+ppl plot
+plot/ov/thick=2/nolabels/color=(0,80,0) tr_shelf[i=@sum,l=@sbx:12,gt=tax@asn]
+plot/ov/d=1/color=red/nolabels/dashed transport[i=@sum,gt=tax@asn]
+plot/ov/d=1/color=red/nolabels/thick=2 transport[i=@sum,l=@sbx:12,gt=tax@asn]
+plot/ov/d=2/color=blue/nolabels/dashed transport[i=@sum,gt=tax@asn]
+plot/ov/d=2/color=blue/nolabels/thick=2 transport[i=@sum,l=@sbx:12,gt=tax@asn]
+plot/ov/d=4/color=black/nolabels/dashed transport[i=1:48@sum,gt=tax@asn]
+plot/ov/d=4/color=black/nolabels/thick=2 transport[i=1:48@sum,l=@sbx:12,gt=tax@asn]
+!plot/ov/color=(70,70,70)/nolabels/dashed tr_in[gt=tax@asn]
+plot/ov/color=(70,70,70)/nolabels/thick=2 tr_in[l=@sbx:12,gt=tax@asn]
+
+
+!! add a 0 line
+let a=transport[j=1,i=1,gt=tax@asn]*0
+plot/ov/color=black/dashed/nolabels a
+
+!! Ne trace rien.....
+let tt=date[d=1,gt=tax@asn]
+let t0 = tt[t="01-jan-1980"@itp]; list t0
+let t1 = tt[t="01-jan-2000"@itp]; list t0
+polygon/ov/line/nolabel {`t0`,`t0`,`t1`,`t1`},{0.9,1.2,1.2,0.9}
+
+!set text/color=(70,70,70)
+!annotate/size=0.1/normalized/xpos=0.02/ypos=0.97 "Shelf break + Le Maire Strait + Magellan Strait"
+set text/color=(0,80,0)
+annotate/size=0.1/normalized/xpos=0.03/ypos=0.96 "Shelf Break"
+set text/color=blue
+annotate/size=0.1/normalized/xpos=0.03/ypos=0.93 "Le Maire Strait"
+set text/color=red
+annotate/size=0.1/normalized/xpos=0.03/ypos=0.90 "Magellan Strait"
+set text/color=black
+annotate/size=0.1/normalized/xpos=0.02/ypos=0.85 "Section S1 (52.3S)"
+set text/color=black
+annotate/size=0.1/normalized/xpos=0.7/ypos=0.95 "dashed line = Monthly Value<NL>thick line = 12 months running mean"
+
+frame/file="yearly_budget.png"

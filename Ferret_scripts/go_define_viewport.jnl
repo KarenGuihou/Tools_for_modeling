@@ -1,0 +1,4 @@
+set win/aspect=0.5
+define viewport/axes/x=0.08:0.45/y=0.15:0.95 2left
+define viewport/axes/x=0.55:0.92/y=0.15:0.95 2right
+

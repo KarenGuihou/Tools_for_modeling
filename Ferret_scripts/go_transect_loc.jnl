@@ -1,0 +1,46 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v6.96 (PyFerret 1.2)
+ ! Linux 3.19.0-33-generic - 11/23/15
+ ! 13-Jul-17 20:53     
+
+cancel data/all
+set memory/size=2048
+set w 1
+set text/fontsize=arial
+
+go go_define_viewport
+set viewport 2left
+use "../Runs/NEMO_ORCA/orca12_2000_01_swas_ts.nc"
+use "../Runs/NEMO_ORCA/bathymetry_ORCA12_V3.3.nc"
+pal yellow_green_blue
+shade/k=1/nokey/vlimits=-60:-40/hlimits=-78:-55/d=1/lev=(-inf)(29 31 1)(31 34.9 0.2)(inf)/ov/set_up/nolabels salt,lonr,latr
+ppl axlabp -1 -1; ppl axlsze 0.1 0.1
+ppl xlab "Longitude"; ppl ylab "Latitude"; ppl title "NEMO ORCA12"
+ppl shade
+shade/ov/pal=tan/lev=(0.0)/k=1/d=2/nolabels/vlimits=-60:-40/hlimits=-78:-55 mask,nav_lon,nav_lat
+contour/ov/lev=(200)/d=2/nolabels/color=black bathymetry,nav_lon,nav_lat
+contour/ov/d=2/nolabels/color=black/size=0.1 mask,nav_lon,nav_lat
+!go coastline
+go go_add_section.jnl
+set text/color=red
+annotate/normalized/xpos=0.02/ypos=0.12/size=0.1   "1. Magellan Strait"
+annotate/normalized/xpos=0.02/ypos=0.07/size=0.1   "2. Le Maire Strait"
+annotate/normalized/xpos=0.02/ypos=0.02/size=0.1   "3. Shelf break"
+set text/color=black
+
+set viewport 2right
+use "../Runs/Combes_monthly_nc/CMM_y2000m01_T.nc"; set var/bad=0 salt[d=3]
+use "../Runs/Combes_grid/roms_agrif_grd.nc"
+pal yellow_green_blue
+shade/k=1/vlimits=-60:-40/hlimits=-78:-55/d=3/lev=(-inf)(29 31 1)(31 34.9 0.2)(inf)/nolabels/set_up salt
+ppl shakey 1       1      0.1        0        3        9 7.25     7.56     1.25     7.54
+ppl axlabp -1 0; ppl xlab "Longitude"; ppl ylab "Latitude"; ppl title "ROMS CMM12"
+ppl shade
+shade/ov/pal=tan/lev=(0.0)/k=1/d=4/nolabels/vlimits=-60:-40/hlimits=-78:-55 mask_rho,lon_rho,lat_rho
+contour/ov/lev=(200)/d=4/nolabels/color=black h,longitude[d=3],latitude[d=3]
+contour/ov/d=4/nolabels/color=black/nokey/size=0.01 mask_rho,lon_rho,lat_rho
+!go coastline
+go go_add_section.jnl
+annotate/normalized/xpos=1.02/ypos=1.02/size=0.1 Salinity(PSU)
+
+frame/file="Location_transects.png"

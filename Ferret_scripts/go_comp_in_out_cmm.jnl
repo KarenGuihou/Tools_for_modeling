@@ -1,0 +1,73 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v6.96  
+ ! Linux 2.6.32-573.7.1.el6.x86_64 64-bit - 12/02/15
+ ! 18-May-17 20:10     
+
+cancel data/all
+use Transport_MSpac_$1.nc
+use Transport_MScent_$1.nc
+use Transport_MSatl_$1.nc
+
+set win/aspect=0.5
+define viewport/axes/x=0.08:0.95/y=0.17:0.98 Vtimeseries
+set viewport Vtimeseries
+set text/font=arial
+set text/color=black
+
+stat/d=1 transport[i=@sum]
+!!!! TRANSPORT !!!!
+plot/vlimits=0:0.2/hlimits=0.9:12.1/thick=2/COLOR=blue/set_up transport[k=@ave,d=1,i=@sum]
+ppl xlab "Months"; ppl plot
+repeat/k=1:27 (plot/ov/symbol=27/nolabels/COLOR=blue transport[d=1,i=@sum])
+set text/color=blue
+annotate/size=0.15/normalized/xpos=0.05/ypos=0.95 "Pacific (74W)"
+
+plot/ov/thick=2/color=green/nolabels/dash transport[k=@ave,d=2,i=@sum]
+repeat/k=1:27 (plot/ov/symbol=27/nolabels/color=green transport[d=2,i=@sum])
+set text/color=green
+annotate/size=0.15/normalized/xpos=0.05/ypos=0.90 "Central (53.2S)"
+
+plot/ov/thick=2/color=red/nolabels transport[k=@ave,d=3,i=@sum]
+repeat/k=1:27 (plot/ov/symbol=27/nolabels/color=red transport[d=3,i=@sum])
+set text/color=red
+annotate/size=0.15/normalized/xpos=0.05/ypos=0.85 "Atlantic (68.6W)"
+
+set text/color=black
+frame/file="$1_MS_transport.png"
+
+
+!!!! TS DIAG MS !!!!
+use $2
+set var/bad=0 temp
+set var/bad=0 salt
+set win/aspect=0.8
+define viewport/axes/x=0.09:0.95/y=0.13:0.98 Vtimeseries
+set viewport Vtimeseries
+!! cmm
+!plot/i=90/j=156:161/vs/hlimits=30.9:34.7/vlimits=1:13.1/COLOR=blue/symbol=01 salt,temp
+!plot/i=129:132/j=150/vs/ov/COLOR=green/nolabels/symbol=01 salt,temp
+!plot/i=155/j=162:168/vs/ov/COLOR=red/nolabels/symbol=01 salt,temp
+!!nemo
+plot/i=58/j=194:200/vs/hlimits=30.9:34.7/vlimits=1:13.1/COLOR=blue/symbol=01 salt,temp
+plot/i=96:100/j=189/vs/ov/COLOR=green/nolabels/symbol=01 salt,temp
+plot/i=124/j=201:206/vs/ov/COLOR=red/nolabels/symbol=01 salt,temp
+
+use "/media/workspace/VOCES/Observations/MagellanStrait/MS_coriolis/Coriolis_MS.nc"
+set var/bad=0 psal
+plot/vs/ov/color=black/nolabels/symbol=01 psal,temp
+frame/file="$1_MS_TS_diag.png"
+
+
+
+!!!! LOCATION !!!!
+define viewport/axes/x=0.09:0.85/y=0.13:0.98 Vtimeseries
+set viewport Vtimeseries
+use "../Runs/Combes_grid/roms_agrif_grd.nc"
+pal grayscale
+shade/i=70:210/j=90:190/lev=(20 150 5)(150 1000 50)(1000 3500 500)(inf)/title="Bathymetry of the Magellan strait" h*mask_rho,lat_rho,lon_rho
+plot/vs/ov/d=5/color=black/nolabels longitude,latitude
+polygon/ov/thick=4/COLOR=blue/nolabels {-74.49,-74.49},{-52.48,-52.79} 
+polygon/ov/thick=4/COLOR=green/nolabels {-70.54,-70.87},{-53.21,-53.21} 
+polygon/ov/thick=4/COLOR=red/nolabels {-68.75,-68.75},{-52.23,-52.54} 
+frame/file="$1_MS_loc_sections.png"
+

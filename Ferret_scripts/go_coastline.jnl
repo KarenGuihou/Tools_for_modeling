@@ -1,0 +1,34 @@
+!http://ferret.pmel.noaa.gov/Ferret/faq/detailed-coastlines-and-borders
+!  http://www.gadm.org/download
+!  download Argentina and Chile at level 0
+!  unzip ARG_adm0.kmz
+!  unzip CHL_adm0.kmz
+!  The result is a kml file, countryA.kml. Rename it, for instance to countryA.dat, and edit that. Remove all of the kml tags at the start and end of the file, that is all of the lines where text is enclosed in brackets < >. If the boundary consists of multiple pieces, such as a set of islands, then there are additional tags between the individual parts of the boundary. Insert a line containing the values
+!
+!  -1E+34 -1E+34  between each piece. This means that you are replacing each instance of a block of tags,
+!  </coordinates>
+!  </LinearRing>
+!  </outerBoundaryIs>
+!  </Polygon>
+!  <Polygon>
+!  <outerBoundaryIs>
+!  <LinearRing>
+!  <coordinates>
+!   with
+!  -1E+34 -1E+34
+!  --> Edit file with vim, then
+!    :%s@^</*@xxx@g
+!    :%s@xxxcoordinates>@-1E+34 -1E+34@
+!    %g@xxx@d
+!
+!  Do wc -l filename
+!  Move this ARfile.dat into the Ferret script directory, and execute the following code
+
+
+
+DEFINE AXIS/Z=1:456626:1 vector_length
+DEFINE GRID/Z=vector_length vector_grid
+FILE/VAR=lat,lon/G=vector_grid "/media/workspace/VOCES/Utils/Ferret_scripts/WDB/samer-all.txt"
+PLOT/VS/LINE/OV/color=(50,50,50)/nolabels lon,lat
+cancel data "/media/workspace/VOCES/Utils/Ferret_scripts/WDB/samer-all.txt"
+

@@ -1,0 +1,16 @@
+cancel data/all; FILE/FORM=delimited/DELIMITER=" "/var="year,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec" $1; sh d
+
+
+pause; set var/bad=0 jan; list jan; stat jan
+pause; set var/bad=0 feb; list feb; stat feb
+pause; set var/bad=0 mar; list mar; stat mar
+pause; set var/bad=0 apr; list apr; stat apr
+pause; set var/bad=0 may; list may; stat may
+pause; set var/bad=0 jun; list jun; stat jun
+pause; set var/bad=0 jul; list jul; stat jul
+pause; set var/bad=0 aug; list aug; stat aug
+pause; set var/bad=0 sep; list sep; stat sep
+pause; set var/bad=0 oct; list oct; stat oct
+pause; set var/bad=0 nov; list nov; stat nov
+pause; set var/bad=0 dec; list dec; stat dec
+

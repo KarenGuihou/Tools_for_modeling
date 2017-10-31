@@ -1,0 +1,63 @@
+ ! NOAA/PMEL TMAP
+ ! FERRET v6.96 (PyFerret 1.2)
+ ! Linux 3.19.0-33-generic - 11/23/15
+ ! 13-Jul-17 20:53     
+
+cancel data/all
+set memory/size=2048
+set w 1
+set text/fontsize=arial
+
+set win/aspect=0.6
+go margins 0.1 1.6 1 1.5
+use "../Runs/Combes_monthly_nc/CMM_y2000m01_T.nc"; set var/bad=0 salt[d=1]
+use "../Runs/Combes_grid/roms_agrif_grd.nc"
+pal yellow_green_blue
+shade/k=1/vlimits=-55:-52/hlimits=-76:-66/d=1/lev=(-inf)(29 31 1)(31 34.9 0.2)(inf)/nolabels/set_up salt
+ppl axlabp -1 -1; ppl xlab "Longitude"; ppl ylab "Latitude"; ppl title "ROMS CMM12"
+ppl shade
+shade/ov/pal=tan/lev=(0.0)/k=1/d=2/nolabels/vlimits=-60:-40/hlimits=-78:-55 mask_rho,lon_rho,lat_rho
+contour/ov/lev=(200)/d=2/nolabels/color=black h,longitude[d=1],latitude[d=1]
+go coastline
+
+plot/ov/vs/symbol=12/color=red/size=0.3/thick=4/nolabels -72.38,-53.53
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -70.94,-53.65
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -70.17,-53.65
+!plot/ov/vs/symbol=12/color=red/size=0.3/thick=4/nolabels -70.17,-53.81
+!plot/ov/vs/symbol=12/color=red/size=0.3/thick=4/nolabels -68.97,-54.47
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -70.91,-53.16
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -69.91,-52.84
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -69.19,-52.68
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -68.39,-52.86
+
+
+frame/file="Zoom_MS_region_CMM.png"
+
+
+!! NEMO
+cancel data/all
+set memory/size=2048
+set w 1
+set text/fontsize=arial
+
+set win/aspect=0.6
+go margins 0.1 1.6 1 1.5
+use "../Runs/NEMO_ORCA/orca12_2000_01_swas_ts.nc"
+use "../Runs/NEMO_ORCA/bathymetry_ORCA12_V3.3.nc"
+pal yellow_green_blue
+shade/k=1/vlimits=-60:-40/hlimits=-78:-55/d=1/lev=(-inf)(29 31 1)(31 34.9 0.2)(inf)/ov/set_up/nolabels salt,lonr,latr
+ppl axlabp -1 -1; ppl axlsze 0.1 0.1
+ppl xlab "Longitude"; ppl ylab "Latitude"; ppl title "NEMO ORCA12"
+ppl shade
+shade/ov/pal=tan/lev=(0.0)/k=1/d=2/nolabels/vlimits=-60:-40/hlimits=-78:-55 mask,nav_lon,nav_lat
+go coastline
+
+plot/ov/vs/symbol=12/color=red/size=0.3/thick=4/nolabels -72.38,-53.53
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -70.94,-53.65
+plot/ov/vs/symbol=16/color=red/size=0.3/thick=4/nolabels -70.17,-53.81
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -69.3,-54.4
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -70.91,-53.16
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -69.91,-52.84
+plot/ov/vs/symbol=10/color=red/size=0.3/thick=4/nolabels -69.19,-52.68
+plot/ov/vs/symbol=14/color=red/size=0.3/thick=4/nolabels -68.39,-52.86
+frame/file="Zoom_MS_region_NEMO.png"

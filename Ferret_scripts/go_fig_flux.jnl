@@ -1,0 +1,38 @@
+cancel data/all
+DEFINE AXIS/X=1:12:1 months
+DEFINE AXIS/y=1:8:1 river
+define grid/x=months/y=river gridtable
+file/grid=gridtable/col=12/var="Flux" table_mean_8_rivers_norivername.txt
+
+set text/font=carlito
+set text/color=black
+set win/aspect=0.5
+go margins 0.7 0.8 1 0.5
+
+plot/nolabels/set_up/vlimits=0:170/color=black/thick=3  flux[j=@sum]
+!plot/nolabels/j=1/set_up/vlimits=0:65/color=black flux
+ppl xlab "Months"
+ppl ylab "Flux (m3/s)"
+ppl plot
+
+plot/ov/nolabels/j=1/color=(30,30,30) flux
+plot/ov/nolabels/j=2/color=green flux
+plot/ov/nolabels/j=3/color=red flux
+plot/ov/nolabels/j=4/color=blue flux
+plot/ov/nolabels/j=5/color=(30,30,30)/dashed flux
+plot/ov/nolabels/j=6/color=green/dashed flux
+plot/ov/nolabels/j=7/color=red/dashed flux
+plot/ov/nolabels/j=8/color=blue/dashed flux
+
+set text/color=(30,30,30); annotate/xpos=1.1/ypos=163/size=0.1 "1) Seno Otway"
+set text/color=green; annotate/xpos=1.1/ypos=155/size=0.1 "2) Rio San Juan"
+set text/color=red; annotate/xpos=1.1/ypos=147/size=0.1   "3) Tierra del Fuego"
+set text/color=blue; annotate/xpos=1.1/ypos=139/size=0.1  "4) Seno Almirantzazo"
+set text/color=(30,30,30); annotate/xpos=1.1/ypos=131/size=0.1 "5) Punta Arenas (--)"
+set text/color=green; annotate/xpos=1.1/ypos=124/size=0.1 "6) Bahia San Felipe (--)"
+set text/color=red; annotate/xpos=1.1/ypos=117/size=0.1   "7) Cerro Sombrero (--)"
+set text/color=blue; annotate/xpos=1.1/ypos=110/size=0.1  "8) Rio Cullen (--)"
+
+set text/color=black; annotate/xpos=6.5/halign=0/ypos=180/size=0.2  "TOTAL FLUX INTO THE MAGELLAN STRAIT"
+
+frame/file=yearly_flux_rios.png
