@@ -17,9 +17,12 @@ def load_ncvar(filename, var, filetype):
     """
     if filetype == 'nc':
         f = netcdf.netcdf_file(filename, 'r')
-        data = f.variables[var].data
-        f.close()
-        return data
+        if f.variables.has_key(var):
+            data = f.variables[var].data
+            f.close()
+            return data
+        else:
+            return 0
     elif filetype == 'hdf5':
         f = h5py.File(filename, 'r')
         variable = (f[var])[:]
@@ -91,26 +94,25 @@ def writevar4D(f,var,varname,dim1,dim2,dim3,dim4,varunits):
     varname[:,:]=var
     varname.units = varunits
 
-def get_e3u(depth):
+def get_dz(depth):
     """
     Generate celle thickness from 3D depth grid
     --
     Input   depth
     Output  cell thickness
     """
-    print(depth.shape)
     if len(depth.shape) == 3:
-        e3u = np.zeros(depth)
-        e3u[0,:,:] = depth[0,:,:]*-1
-        e3u[1:,:,:] = depth[:-1,:,:]-depth[1:,:,:]
+        dz = np.zeros(depth.shape)
+        dz[0,:,:] = depth[0,:,:]*-1
+        dz[1:,:,:] = depth[:-1,:,:]-depth[1:,:,:]
     elif len(depth.shape) == 2:
-        e3u = np.zeros((depth.shape[0],depth.shape[1]))
-        e3u[0,:] = depth[0,:]*-1
-        e3u[1:,:] = depth[:-1,:]-depth[1:,:]
+        dz = np.zeros((depth.shape[0],depth.shape[1]))
+        dz[0,:] = depth[0,:]*-1
+        dz[1:,:] = depth[:-1,:]-depth[1:,:]
     else:
         print('Case not taken into account. Please code it')
 
-    return(e3u)
+    return(abs(dz))
 
 def uv_on_Tpoint(u,v):  #,lon_u,lat_u,lon_v,lat_v,lon_rho,lat_rho):
     """

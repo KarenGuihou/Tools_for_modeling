@@ -6,6 +6,7 @@ import os
 import sys
 from jdcal import gcal2jd, jd2gcal
 import math
+import tools_modeling
 
 ### FUNCTIONS ###
 def change_tzyx2tyxz(var):
@@ -41,7 +42,7 @@ def time_jd(yyyy,mm,dd,yyyy_orig,mm_orig,dd_orig):
 
 def calculate_dist_2_coords(lat1,lon1,lat2,lon2):
     """
-    Calculate the distance between 2 coordinates using the Haversine formula.
+    Calculate the distance between 2 coordinates using the Haversine formula. In metres
     Inspired by http://andrew.hedges.name/experiments/haversine/ 
     and http://stackoverflow.com/questions/19412462/getting-distance-between-two-points-based-on-latitude-longitude
     --
@@ -58,22 +59,37 @@ def calculate_dist_2_coords(lat1,lon1,lat2,lon2):
     dlat = lat2 - lat1
     a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    distance = R * c
+    distance = R * c * 1e3
 
     return(distance)
 
-def get_transport_section(u,depth,lat,lon,ii_o,ii_e,jj_o,jj_e,t):
+def get_transport(u,depth,lat,lon):
     """ 
-    Calculation of transport across a given section. 
-	T = (u * depth * length_section)/10^6
+    Calculation of transport across a given section (axe=0, along zonal, axe=1 along merid.)
+    T = (u * depth * length_section)/10^6
     --
-    Input   u,depth,lat,lon,indice_i_orig,indice_i_end,indice_j_orig,indice_j_end
+    Input   u,axe,depth,lat,lon,indice_i_orig,indice_i_end,indice_j_orig,indice_j_end
     Output  transport (Sv)
-	"""
-    e3u = get_e3u(depth)
-    length_section = calculate_dist_2_coords(lat[jj_o],lon[ii_o],lat[jj_e-1],lon[ii_e-1])*1e3
-    transport_along_section = np.multiply(u[t,:,jj_o:jj_e,ii_o:ii_e],e3u[:,jj_o:jj_e,ii_o:ii_e])
-    transport = np.sum(transport_along_section)*length_section/1e6
+    """
+    dz = tools_modeling.get_dz(depth)
+    if len(lon) == 1:
+        plen = len(lat)
+        transport = np.zeros((plen))
+        for jj in range(0,plen-1):
+            length_per_grid_pt = calculate_dist_2_coords(lat[jj],lon,lat[jj+1],lon)
+            transport[jj] = np.sum(u[:,jj,:]*dz[:,jj,:])*length_per_grid_pt/1e6
+    elif len(lat) == 1:
+        plen = len(lon)
+        transport = np.zeros((plen))
+        for jj in range(0,plen-1):
+            length_per_grid_pt = calculate_dist_2_coords(lat,lon[jj],lat,lon[jj+1])
+            transport[jj] = np.sum(u[:,:,jj]*dz[:,:,jj])*length_per_grid_pt/1e6
+    elif len(lon) == len(lat):
+        plen = len(lat)
+        transport = np.zeros((plen))
+        for jj in range(0,plen-1):
+            length_per_grid_pt = calculate_dist_2_coords(lat[jj],lon[jj],lat[jj+1],lon[jj+1])
+            transport[jj] = np.sum(u[:,jj]*dz[:,jj])*length_per_grid_pt/1e6
     return(transport)
 
 def do_kdtree(combined_x_y_arrays, points):
@@ -228,3 +244,14 @@ def smooth_var(var,nlen,box):
         else:
             print('WARNING Case not coded')
     return(var_smoothed)
+
+def sort_index(var):
+    """
+    Return a sorted variable and the corresponding indexes
+    --
+    Input   var
+    Output  var_sorted, index
+    """
+    sortedvar = sorted(var)
+    sortedindex = [b[0] for b in sorted(enumerate(var),key=lambda i:i[1])]
+    return sortedvar, sortedindex
